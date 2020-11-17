@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+    canvas {
+      border: 1px solid #f00;
+    }
+
+    #pie {
+      width: 400px;
+      height: 300px;
+      border: 1px solid blue;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="pie"></div>
+  <script src="./index.js"></script>
+  <script>
+    const data = [{
+      type: 'A',
+      value: 100
+    }, {
+      type: 'B',
+      value: 100
+    }, {
+      type: 'C',
+      value: 100
+    }]
+
+    const chart = new PieChart({
+      container: 'pie',
+      data,
+      padding: [10, 10]
+    })
+  </script>
+</body>
+</html>
