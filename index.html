@@ -22,6 +22,8 @@
       font-size: 12px;
       line-height: 16px;
       display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
     }
     .legends > span {
       position: relative;
@@ -54,13 +56,39 @@
     }, {
       type: 'C',
       value: 100
+    }, {
+      type: 'D',
+      value: 100
+    }, {
+      type: 'E',
+      value: 100
+    }, {
+      type: 'F',
+      value: 100
+    }, {
+      type: 'G',
+      value: 100
+    }, {
+      type: 'H',
+      value: 100
+    }, {
+      type: 'I',
+      value: 100
+    }, {
+      type: 'J',
+      value: 100
+    }, {
+      type: 'K',
+      value: 100
     }]
 
     const chart = new PieChart({
       container: 'pie',
       data,
+      colors: ['red', 'green', 'cyan', 'yellow', 'pink', 'orange', 'lightblue', 'lightgreen', 'lightblue', '#ccc', '#000'],
       padding: [10, 10]
     })
+    console.log(chart)
   </script>
 </body>
 </html>

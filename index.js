@@ -1,3 +1,28 @@
+const legendGetter = {
+  /**
+   * 画出legend
+   */
+  drawLegend (data, colors) {
+    const legendWrapper = document.createElement('div')
+    legendWrapper.classList.add('legends')
+    data.forEach((item, i) => {
+      legendWrapper.appendChild(this.drawLegendItem(item, colors[i]))
+    })
+    return legendWrapper
+  },
+
+  drawLegendItem (data, color) {
+    const legendItem = document.createElement('span')
+    const legendIcon = document.createElement('i')
+    legendItem.innerText = data.type
+    legendIcon.style.backgroundColor = color
+    legendItem.appendChild(legendIcon)
+    return legendItem
+  }
+}
+
+const getPxNumber = (size) => size.slice(0, -2)
+
 class PieChart {
   constructor ({
     container = 'chart', // 容器id
@@ -13,9 +38,13 @@ class PieChart {
     this.startAngle = startAngle
     this.data = data
     this.colors = colors
-    this.padding = padding
+    this.padding = this.formatPadding(padding)
+
+    this.legendHeight = 0
     this.init(container)
 
+    this.drawLegend()
+    this.translateOriginToCenter()
     this.drawPie()
   }
 
@@ -26,10 +55,33 @@ class PieChart {
     this.can.height = this.container.offsetHeight
     this.can.width = this.container.offsetWidth
     this.radius = this.getRadius()
-    this.translateOriginToCenter()
+  }
+  
+  // 计算legend高度
+  getLegendDom () {
+    const legends = legendGetter.drawLegend(this.data, this.colors)
+    this.container.append(legends)
+    // TODO: 将legend的dom隐藏 (z-index / visible)legends
+    this.legendHeight = legends.offsetHeight
+    this.radius = this.getRadius()
+    return legends
+  }
 
-    const legends = this.drawLegend()
-    document.body.appendChild(legends)
+  drawLegend () {
+    const legends = this.getLegendDom()
+    const styles = getComputedStyle(legends)
+    console.log(styles)
+    let { fontSize, width, height } = styles
+    fontSize = getPxNumber(fontSize)
+    width = getPxNumber(width)
+    height = getPxNumber(height)
+    console.log(fontSize, width, height)
+
+    this.ctx.fontSize = fontSize
+  }
+
+  // TODO: 获取全部 i 和 span，绘制canvas
+  drawLegendItem (itemDom) {
   }
 
   // 画pie主体
@@ -65,27 +117,6 @@ class PieChart {
   }
 
   /**
-   * 画出legend
-   */
-  drawLegend () {
-    const legendWrapper = document.createElement('div')
-    legendWrapper.classList.add('legends')
-    this.data.forEach((data, i) => {
-      legendWrapper.appendChild(this.drawLegendItem(data, i))
-    })
-    return legendWrapper
-  }
-
-  drawLegendItem (data, i) {
-    const legendItem = document.createElement('span')
-    const legendIcon = document.createElement('i')
-    legendItem.innerText = data.type
-    legendIcon.style.backgroundColor = this.colors[i]
-    legendItem.appendChild(legendIcon)
-    return legendItem
-  }
-
-  /**
    * 通过padding 和 height 计算半径
    */
   getRadius () {
@@ -93,14 +124,33 @@ class PieChart {
     if (this.padding.length) {
       radius -= this.padding[0]
     }
+    radius -= this.legendHeight
     return radius
   }
 
   /**
    * 将canvas原点移动至 center
+   * 考虑进padding和legend的影响
    */
   translateOriginToCenter () {
     const { width, height } = this.can
-    this.ctx.translate(width / 2, height / 2)
+    const { padding, legendHeight } = this
+    const [top, right, bottom, left] = padding
+    const x = (width - (right + left)) / 2 + left
+    const y = (height - (top + bottom + legendHeight)) / 2 + top
+    this.ctx.translate(x, y)
   }
+
+  /**
+   * 规整padding长度为4，便于计算
+   */
+  formatPadding (padding = []) {
+    if (!padding.length) {
+      padding = [0, 0, 0, 0]
+    } else if (padding.length === 2) {
+      padding = [...padding, ...padding]
+    }
+    return padding
+  }
+
 }
