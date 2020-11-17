@@ -27,6 +27,9 @@ class PieChart {
     this.can.width = this.container.offsetWidth
     this.radius = this.getRadius()
     this.translateOriginToCenter()
+
+    const legends = this.drawLegend()
+    document.body.appendChild(legends)
   }
 
   // 画pie主体
@@ -38,9 +41,9 @@ class PieChart {
       if (i !== this.data.length - 1) {
         this.drawPiePice(originPercent, originPercent + percent, this.colors[i])
       } else {
-        this.drawPiePice(originPercent, -0.5, this.colors[i])
+        this.drawPiePice(originPercent, this.startAngle, this.colors[i])
       }
-      this.startAngle = originPercent += percent
+      originPercent += percent
     })
 
     this.container.appendChild(this.can)
@@ -59,6 +62,27 @@ class PieChart {
     ctx.arc(0, 0, radius, sAngle * Math.PI, eAngle * Math.PI, false)
     ctx.closePath()
     ctx.fill()
+  }
+
+  /**
+   * 画出legend
+   */
+  drawLegend () {
+    const legendWrapper = document.createElement('div')
+    legendWrapper.classList.add('legends')
+    this.data.forEach((data, i) => {
+      legendWrapper.appendChild(this.drawLegendItem(data, i))
+    })
+    return legendWrapper
+  }
+
+  drawLegendItem (data, i) {
+    const legendItem = document.createElement('span')
+    const legendIcon = document.createElement('i')
+    legendItem.innerText = data.type
+    legendIcon.style.backgroundColor = this.colors[i]
+    legendItem.appendChild(legendIcon)
+    return legendItem
   }
 
   /**
