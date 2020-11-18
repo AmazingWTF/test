@@ -1,23 +1,104 @@
+const getRandomColor = function (){
+  return  '#' +
+    (function(color){
+      return (color +=  '0123456789abcdef'[Math.floor(Math.random()*16)])
+        && (color.length == 6) ?  color : arguments.callee(color)
+    })('')
+}
+
 const legendGetter = {
   /**
    * 画出legend
    */
-  drawLegend (data, colors) {
+  drawLegendDom (data, colors) {
     const legendWrapper = document.createElement('div')
     legendWrapper.classList.add('legends')
     data.forEach((item, i) => {
-      legendWrapper.appendChild(this.drawLegendItem(item, colors[i]))
+      legendWrapper.appendChild(this.drawLegendItemDom(item, colors[i]))
     })
     return legendWrapper
   },
 
-  drawLegendItem (data, color) {
-    const legendItem = document.createElement('span')
+  drawLegendItemDom (data, color) {
+    const legendItem = document.createElement('div')
+    const legendText = document.createElement('span')
     const legendIcon = document.createElement('i')
-    legendItem.innerText = data.type
+    legendItem.classList.add('legend')
+    legendText.innerText = data.type
     legendIcon.style.backgroundColor = color
     legendItem.appendChild(legendIcon)
+    legendItem.appendChild(legendText)
     return legendItem
+  },
+
+  drawLegendCan (legends, { maxWidth, maxHeight, padding }) {
+    const can = document.createElement('canvas')
+    const ctx = can.getContext('2d')
+    const styles = getComputedStyle(legends)
+    let { fontSize } = styles
+    can.width = maxWidth
+    can.height = maxHeight
+
+    let currPoint = [padding[0], 0]
+    ctx.fontSize = fontSize
+
+    // TODO: 暂时写死 待修改
+    ctx.fillStyle = '#f00'
+    ctx.font = `${fontSize} sans-serif`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+
+    const items = [].slice.call(legends.querySelectorAll('.legend'))
+    items.forEach(legend => {
+      this.drawLegendItemCan(ctx, legend, currPoint, maxWidth, padding)
+    })
+
+    return can
+  },
+
+  drawLegendItemCan (ctx, legend, currPoint, maxWidth, padding) {
+    const elText = legend.querySelector('span')
+    const elIcon = legend.querySelector('i')
+    // const iconStyle = getComputedStyle(elIcon)
+    const color = elIcon.style.backgroundColor
+    const itemWidth = legend.offsetWidth
+    const itemHeight = legend.offsetHeight
+
+    const legendStyle = getComputedStyle(legend)
+    const textLeft = getPxNumber(legendStyle.paddingLeft)
+
+    // 画legend的icon
+    ctx.strokeStyle = color
+    ctx.lineCap = 'round'
+    ctx.lineWidth = elIcon.offsetHeight
+
+    if (currPoint[0] + itemWidth > maxWidth) {
+      currPoint[0] = padding[0]
+      currPoint[1] += itemHeight
+      this.drawIcon(ctx, currPoint, { width: elIcon.offsetWidth, height: elIcon.offsetHeight, top: elIcon.offsetTop })
+      ctx.fillText(elText.innerText, currPoint[0] + Number(textLeft), currPoint[1])
+    } else {
+      this.drawIcon(ctx, currPoint, { width: elIcon.offsetWidth, height: elIcon.offsetHeight, top: elIcon.offsetTop })
+      ctx.fillText(elText.innerText, currPoint[0] + Number(textLeft), currPoint[1])
+      currPoint[0] = currPoint[0] + itemWidth
+    }
+  },
+
+  drawIcon (ctx, currPoint, { width, height, top }) {
+    const y = top + currPoint[1] - height / 2
+    ctx.beginPath()
+    ctx.moveTo(currPoint[0], y)
+    ctx.lineTo(currPoint[0] + width, y)
+    ctx.stroke()
+  },
+
+  drawLabel ({ ctx, color, text, angle, radius }) {
+    const offset = 15
+    ctx.fillText(
+      text,
+      Math.sin(Math.PI * (0.5 - angle)) * (radius + offset),
+      Math.cos(Math.PI * (0.5 - angle)) * (radius + offset)
+    )
   }
 }
 
@@ -28,7 +109,7 @@ class PieChart {
     container = 'chart', // 容器id
     data = [], // 数据
     padding = [],
-    colors = ['red', 'yellow', 'blue', 'black', 'cyan'],
+    colors = [],
     startAngle = -0.5
   }) {
     this.can = null
@@ -55,33 +136,38 @@ class PieChart {
     this.can.height = this.container.offsetHeight
     this.can.width = this.container.offsetWidth
     this.radius = this.getRadius()
+    this.fillColors()
   }
-  
+
+  // 将colors补全
+  fillColors () {
+    let dis = this.data.length - this.colors.length
+    while (dis--) {
+      this.colors.push(getRandomColor())
+    }
+  }
+
   // 计算legend高度
   getLegendDom () {
-    const legends = legendGetter.drawLegend(this.data, this.colors)
+    const legends = legendGetter.drawLegendDom(this.data, this.colors)
     this.container.append(legends)
-    // TODO: 将legend的dom隐藏 (z-index / visible)legends
     this.legendHeight = legends.offsetHeight
     this.radius = this.getRadius()
     return legends
   }
 
   drawLegend () {
-    const legends = this.getLegendDom()
-    const styles = getComputedStyle(legends)
-    console.log(styles)
-    let { fontSize, width, height } = styles
-    fontSize = getPxNumber(fontSize)
-    width = getPxNumber(width)
-    height = getPxNumber(height)
-    console.log(fontSize, width, height)
+    const padding = this.padding
+    const legendDom = this.getLegendDom()
+    const maxWidth = legendDom.offsetWidth - (padding[1] + padding[3])
 
-    this.ctx.fontSize = fontSize
-  }
+    const maxHeight = legendDom.offsetHeight
+    const legendCan = legendGetter.drawLegendCan(legendDom, { maxWidth, maxHeight, padding })
 
-  // TODO: 获取全部 i 和 span，绘制canvas
-  drawLegendItem (itemDom) {
+    const originPoint = [padding[3], this.can.height - this.legendHeight - padding[2]]
+    this.ctx.drawImage(legendCan, ...originPoint)
+
+    this.container.removeChild(legendDom)
   }
 
   // 画pie主体
@@ -91,9 +177,9 @@ class PieChart {
     this.data.forEach((item, i) => {
       const percent = +(item.value / total * 2).toFixed(2)
       if (i !== this.data.length - 1) {
-        this.drawPiePice(originPercent, originPercent + percent, this.colors[i])
+        this.drawPiePice(originPercent, originPercent + percent, this.colors[i], item.type)
       } else {
-        this.drawPiePice(originPercent, this.startAngle, this.colors[i])
+        this.drawPiePice(originPercent, this.startAngle, this.colors[i], item.type)
       }
       originPercent += percent
     })
@@ -106,14 +192,18 @@ class PieChart {
    * @param {string} color 扇形颜色
    * @param {number} radius 扇形角度(占总数比例的小数)
    */
-  drawPiePice (sAngle, eAngle, color) {
-    const { ctx, radius, } = this
+  drawPiePice (sAngle, eAngle, color, text) {
+    const { ctx, radius } = this
     ctx.beginPath()
     ctx.fillStyle = color
     ctx.moveTo(0, 0)
     ctx.arc(0, 0, radius, sAngle * Math.PI, eAngle * Math.PI, false)
     ctx.closePath()
     ctx.fill()
+
+    window.ctx = ctx
+
+    legendGetter.drawLabel({ ctx, color, text, angle: (sAngle + eAngle) / 2, radius: this.radius })
   }
 
   /**
@@ -138,6 +228,7 @@ class PieChart {
     const [top, right, bottom, left] = padding
     const x = (width - (right + left)) / 2 + left
     const y = (height - (top + bottom + legendHeight)) / 2 + top
+    this.ctx.save()
     this.ctx.translate(x, y)
   }
 

@@ -10,12 +10,14 @@
       height: 100%;
     }
     canvas {
-      border: 1px solid #f00;
+      /* border: 1px solid #f00; */
+      background-color: #eee;
     }
 
     #pie {
       width: 400px;
       height: 300px;
+      margin-bottom: 100px;
     }
 
     .legends {
@@ -24,20 +26,20 @@
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
+      white-space: nowrap;
+      word-break: keep-all;
     }
-    .legends > span {
+    .legends > .legend {
       position: relative;
-      margin-right: 10px;
-      padding-left: 14px;
+      padding: 0 30px 0 14px;
     }
-    .legends > span > i {
+    .legends > .legend > i {
       position: absolute;
       left: 0;
       top: 50%;
-      width: 10px;
+      width: 8px;
       height: 4px;
       transform: translate(0, -50%);
-      background-color: red;
       border-radius: 2px;
     }
   </style>
@@ -48,22 +50,22 @@
   <script src="./index.js"></script>
   <script>
     const data = [{
-      type: 'A',
+      type: '哈哈哈哈',
       value: 100
     }, {
-      type: 'B',
+      type: 'hehh',
       value: 100
     }, {
-      type: 'C',
+      type: '溪秀',
       value: 100
     }, {
-      type: 'D',
+      type: '呵呵哒',
       value: 100
     }, {
-      type: 'E',
+      type: '的点点滴滴',
       value: 100
     }, {
-      type: 'F',
+      type: '的发放',
       value: 100
     }, {
       type: 'G',
@@ -85,7 +87,7 @@
     const chart = new PieChart({
       container: 'pie',
       data,
-      colors: ['red', 'green', 'cyan', 'yellow', 'pink', 'orange', 'lightblue', 'lightgreen', 'lightblue', '#ccc', '#000'],
+      // colors: ['red', 'green', 'cyan', 'yellow', 'pink', 'orange', 'lightblue', 'lightgreen', 'lightblue', '#ccc', '#000'],
       padding: [10, 10]
     })
     console.log(chart)
