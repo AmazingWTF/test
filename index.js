@@ -40,7 +40,6 @@ const legendGetter = {
     can.height = maxHeight
 
     let currPoint = [padding[0], 0]
-    ctx.fontSize = fontSize
 
     // TODO: 暂时写死 待修改
     ctx.fillStyle = '#f00'
@@ -92,11 +91,16 @@ const legendGetter = {
     ctx.stroke()
   },
 
-  drawLabel ({ ctx, color, text, angle, radius }) {
+  drawLabel ({ ctx, color, text, angle, radius, fontSize }) {
     const offset = 15
+    // 第三、四象限，向右画
+    let dis = 0
+    if (Math.sin(Math.PI * (0.5 - angle)) * (radius + offset) < 0) {
+      dis = -fontSize * text.length
+    }
     ctx.fillText(
       text,
-      Math.sin(Math.PI * (0.5 - angle)) * (radius + offset),
+      Math.sin(Math.PI * (0.5 - angle)) * (radius + offset) + dis,
       Math.cos(Math.PI * (0.5 - angle)) * (radius + offset)
     )
   }
@@ -177,9 +181,9 @@ class PieChart {
     this.data.forEach((item, i) => {
       const percent = +(item.value / total * 2).toFixed(2)
       if (i !== this.data.length - 1) {
-        this.drawPiePice(originPercent, originPercent + percent, this.colors[i], item.type)
+        this.drawPiePice(originPercent, originPercent + percent, this.colors[i], item.type, this.ctx.font)
       } else {
-        this.drawPiePice(originPercent, this.startAngle, this.colors[i], item.type)
+        this.drawPiePice(originPercent, this.startAngle, this.colors[i], item.type, this.ctx.font)
       }
       originPercent += percent
     })
@@ -192,18 +196,17 @@ class PieChart {
    * @param {string} color 扇形颜色
    * @param {number} radius 扇形角度(占总数比例的小数)
    */
-  drawPiePice (sAngle, eAngle, color, text) {
+  drawPiePice (sAngle, eAngle, color, text, font) {
     const { ctx, radius } = this
+    const fontSize = ctx.font.split(' ')[0].slice(0, -2)
+    ctx.font = font
     ctx.beginPath()
     ctx.fillStyle = color
     ctx.moveTo(0, 0)
     ctx.arc(0, 0, radius, sAngle * Math.PI, eAngle * Math.PI, false)
     ctx.closePath()
     ctx.fill()
-
-    window.ctx = ctx
-
-    legendGetter.drawLabel({ ctx, color, text, angle: (sAngle + eAngle) / 2, radius: this.radius })
+    legendGetter.drawLabel({ ctx, color, text, angle: (sAngle + eAngle) / 2, radius: this.radius, fontSize })
   }
 
   /**
